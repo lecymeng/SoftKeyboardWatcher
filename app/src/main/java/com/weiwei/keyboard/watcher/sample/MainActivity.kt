@@ -19,7 +19,9 @@ class MainActivity : AppCompatActivity() {
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING)
 
         // adaptation status bar and navigation bar 👇
-        EdgeInsetDelegate(this).start()
+        EdgeInsetDelegate(this)
+            .setNavigationBarColor(0x20000000)
+            .start()
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
