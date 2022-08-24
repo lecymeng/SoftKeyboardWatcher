@@ -2,7 +2,6 @@ package com.weiwei.keyboard.watcher.sample
 
 import android.animation.ValueAnimator
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -47,18 +46,16 @@ class FirstFragment : Fragment() {
 
         var animator: ValueAnimator? = null
         SoftKeyboardWatcher(requireActivity(), viewLifecycleOwner) { imeVisible, imeHeight, navigationBarsHeight, animated ->
-            Log.d("KeyboardActivity", "imeVisible=$imeVisible, imeHeight=$imeHeight, navigationBarsHeight=$navigationBarsHeight")
+            // set views padding/margin/translationY
 
+            val translation = max(imeHeight - navigationBarsHeight, 0).toFloat()
             if (animated) {
-                val translation = -(max(imeHeight - navigationBarsHeight, 0)).toFloat()
-                buttonSend.translationY = translation
-                textInputLayout.translationY = translation
+                // Android 11+, Window insets animation callback
+                buttonSend.translationY = -translation
+                textInputLayout.translationY = -translation
             } else {
-
-                val currentTranslationY = buttonSend.translationY
-                val endTranslationY = if (imeVisible) imeHeight - navigationBarsHeight else 0
                 animator?.cancel()
-                animator = ValueAnimator.ofFloat(currentTranslationY, -endTranslationY.toFloat()).apply {
+                animator = ValueAnimator.ofFloat(buttonSend.translationY, -translation).apply {
                     duration = 120L
                     addUpdateListener {
                         val value = it.animatedValue as Float
