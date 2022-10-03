@@ -51,6 +51,11 @@ class MainActivity : AppCompatActivity() {
                 startActivity(Intent(this, ImeTestActivity::class.java))
                 true
             }
+            R.id.dialog_test -> {
+                val sendFragment = SendFragment()
+                sendFragment.show(supportFragmentManager, "send")
+                true
+            }
             else -> super.onOptionsItemSelected(item)
         }
     }
