@@ -12,7 +12,7 @@ In your `build.gradle`:
 
 ```groovy
 dependencies {
-    implementation 'com.weicools:keyboard-watcher:1.0.0'
+    implementation 'com.weicools:keyboard-watcher:1.0.1'
 }
 ```
 
@@ -24,12 +24,8 @@ dependencies {
     Activity#onCreate
     window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING)
 
-    or
-
     AndroidManifest.xml activity tag
     android:windowSoftInputMode="adjustNothing"
-
-    or
 
     application/activity theme
     <item name="android:windowSoftInputMode">adjustNothing</item>
@@ -44,37 +40,24 @@ dependencies {
 3. watch keyboard state
 
     ```kotlin
-    var animator: ValueAnimator? = null
-    SoftKeyboardWatcher(requireActivity(), viewLifecycleOwner) { imeVisible, imeHeight, navigationBarsHeight, animated ->
-        // set views padding/margin/translationY
-
-        val translation = max(imeHeight - navigationBarsHeight, 0).toFloat()
+    val keyboardWatcher = SoftKeyboardWatcher(requireActivity().window)
+    keyboardWatcher.startWatch(requireActivity(), viewLifecycleOwner) { imeHeight, navigationBarsHeight, animated ->
+        val translation = -max(imeHeight - navigationBarsHeight, 0).toFloat()
         if (animated) {
             // Android 11+, Window insets animation callback
-            buttonSend.translationY = -translation
-            textInputLayout.translationY = -translation
+            // set views padding/margin/translationY
+            buttonSend.translationY = translation
+            textInputLayout.translationY = translation
         } else {
-            animator?.cancel()
-            animator = ValueAnimator.ofFloat(buttonSend.translationY, -translation).apply {
-                duration = 120L
-                addUpdateListener {
-                    val value = it.animatedValue as Float
-                    buttonSend.translationY = value
-                    textInputLayout.translationY = value
-                }
-                start()
-            }
+            // set views padding/margin/translationY with animation or without animation
+            // do ...
         }
     }
     ```
 
 ## Samples
 
-## TODO
-
-- [ ] remove param: imeVisible (imeVisible is true if imeHeight > 0)
-
-License
+## License
 
 ```license
     Copyright (c) 2021. Weiwei

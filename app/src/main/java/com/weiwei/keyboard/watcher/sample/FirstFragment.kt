@@ -9,7 +9,6 @@ import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.Fragment
-import com.weiwei.keyboard.watcher.SoftInputAnimDelegate
 import com.weiwei.keyboard.watcher.SoftKeyboardWatcher
 import com.weiwei.keyboard.watcher.sample.databinding.FragmentFirstBinding
 import kotlin.math.max
@@ -65,31 +64,34 @@ class FirstFragment : Fragment() {
         val softInputAnimDelegate = SoftInputAnimDelegate()
         val keyboardWatcher = SoftKeyboardWatcher(requireActivity().window)
         keyboardWatcher.startWatch(requireActivity(), viewLifecycleOwner) { imeHeight, navigationBarsHeight, animated ->
-            // set views padding/margin/translationY
             val translation = -max(imeHeight - navigationBarsHeight, 0).toFloat()
             if (animated) {
                 // Android 11+, Window insets animation callback
+                // set views padding/margin/translationY
                 buttonSend.translationY = translation
                 textInputLayout.translationY = translation
             } else {
-                buttonSend.translationY = translation
-                textInputLayout.translationY = translation
+                // set views padding/margin/translationY with animation or without animation
 
-                // if (imeHeight > 0) {
-                //     val areaHeight = textInputLayout.top - buttonSend.bottom
-                //     softInputAnimDelegate.showSoftInput(translation - areaHeight, translation) { anim ->
-                //         val animatedValue = anim.animatedValue as Float
-                //         buttonSend.alpha = anim.animatedFraction
-                //         textInputLayout.alpha = anim.animatedFraction
-                //         buttonSend.translationY = animatedValue
-                //         textInputLayout.translationY = animatedValue
-                //     }
-                // } else {
-                //     softInputAnimDelegate.hideSoftInput(buttonSend.translationY) { animatedValue ->
-                //         buttonSend.translationY = animatedValue
-                //         textInputLayout.translationY = animatedValue
-                //     }
-                // }
+                if (imeHeight > 0) {
+                    buttonSend.alpha = 0f
+                    textInputLayout.alpha = 0f
+                    buttonSend.translationY = translation
+                    textInputLayout.translationY = translation
+                    val areaHeight = textInputLayout.top - buttonSend.bottom
+                    softInputAnimDelegate.showSoftInput(translation - areaHeight, translation) { anim ->
+                        buttonSend.alpha = anim.animatedFraction
+                        textInputLayout.alpha = anim.animatedFraction
+                        // val animatedValue = anim.animatedValue as Float
+                        // buttonSend.translationY = animatedValue
+                        // textInputLayout.translationY = animatedValue
+                    }
+                } else {
+                    softInputAnimDelegate.hideSoftInput(buttonSend.translationY) { animatedValue ->
+                        buttonSend.translationY = animatedValue
+                        textInputLayout.translationY = animatedValue
+                    }
+                }
             }
         }
     }
