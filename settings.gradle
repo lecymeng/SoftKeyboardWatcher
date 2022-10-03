@@ -10,8 +10,11 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven { url 'https://jitpack.io' }
+        maven { url 'https://maven.aliyun.com/repository/public/' }
     }
 }
 rootProject.name = "SoftKeyboardWatcher"
 include ':app'
 include ':library'
+include ':library-hook'

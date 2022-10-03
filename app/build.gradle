@@ -41,5 +41,10 @@ dependencies {
     implementation 'androidx.navigation:navigation-fragment-ktx:2.5.2'
     implementation 'androidx.navigation:navigation-ui-ktx:2.5.2'
 
+    implementation 'me.weishu.exposed:exposed-xposedapi:0.4.5'
+    // implementation 'com.github.tiann:epic:0.11.2'
+    implementation(files("libs/epic-release-0.11.2.aar"))
+
     implementation project(path: ':library')
+    implementation project(path: ':library-hook')
 }
