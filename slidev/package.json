@@ -1,0 +1,14 @@
+{
+  "name": "slidev",
+  "private": true,
+  "scripts": {
+    "build": "slidev build SoftKeyboard.slidev.md",
+    "dev": "slidev SoftKeyboard.slidev.md --open",
+    "export": "slidev export SoftKeyboard.slidev.md"
+  },
+  "dependencies": {
+    "@slidev/cli": "^0.36.5",
+    "@slidev/theme-default": "*",
+    "@slidev/theme-seriph": "*"
+  }
+}
