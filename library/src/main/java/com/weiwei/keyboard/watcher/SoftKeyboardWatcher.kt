@@ -19,7 +19,9 @@ import android.graphics.Rect
 import android.graphics.drawable.ColorDrawable
 import android.os.Build
 import android.view.Gravity
+import android.view.View
 import android.view.ViewTreeObserver
+import android.view.Window
 import android.view.WindowManager
 import android.widget.FrameLayout
 import android.widget.PopupWindow
@@ -35,22 +37,24 @@ import androidx.lifecycle.LifecycleOwner
  * @author weiwei
  * @date 2022.08.13
  *
- * Must be set WindowCompat.setDecorFitsSystemWindows(activity.window, false)
- * It is recommended to set the activity windowSoftInputMode to adjustNothing
+ * Must be set the activity windowSoftInputMode to adjustNothing
  */
-class SoftKeyboardWatcher(
-    activity: Activity,
-    lifecycleOwner: LifecycleOwner,
-    private val listener: (imeVisible: Boolean, imeHeight: Int, navigationBarsHeight: Int, animated: Boolean) -> Unit
-) {
+class SoftKeyboardWatcher(window: Window) {
+    fun interface WatcherCallback {
+        fun onChanged(imeHeight: Int, navigationBarsHeight: Int, animated: Boolean)
+    }
 
-    private val decorView = activity.window.decorView
+    private var callback: WatcherCallback? = null
 
-    init {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-            watchViaPopupWindow(activity, lifecycleOwner)
-        } else {
+    private val decorView: View = window.decorView
+
+    fun startWatch(activity: Activity, lifecycleOwner: LifecycleOwner, callback: WatcherCallback) {
+        this.callback = callback
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             watchViaWindowInsetsAnimationCallback()
+        } else {
+            watchViaPopupWindow(activity, lifecycleOwner)
         }
     }
 
@@ -71,15 +75,29 @@ class SoftKeyboardWatcher(
             }
 
             override fun onProgress(insets: WindowInsetsCompat, runningAnimations: MutableList<WindowInsetsAnimationCompat>): WindowInsetsCompat {
-                val imeVisible = insets.isVisible(WindowInsetsCompat.Type.ime())
+                // val imeVisible = insets.isVisible(WindowInsetsCompat.Type.ime())
                 val imeHeight = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
-                listener.invoke(imeVisible, imeHeight, navigationBarsHeight, true)
+                callback?.onChanged(imeHeight, navigationBarsHeight, true)
+                // Log.d("SoftKeyboardWatcher", "onProgress: imeHeight = $imeHeight")
                 return insets
             }
         })
     }
 
     private fun watchViaPopupWindow(activity: Activity, lifecycleOwner: LifecycleOwner) {
+        val wm = activity.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+        val screenRealHeight: Int = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            wm.currentWindowMetrics.bounds.height()
+        } else {
+            Point().also {
+                @Suppress("DEPRECATION")
+                wm.defaultDisplay.getRealSize(it)
+            }.y
+        }
+
+        var keyboardHeight = 0
+
+        val popupRect = Rect()
 
         val popupView = FrameLayout(activity).apply {
             layoutParams = FrameLayout.LayoutParams(
@@ -87,22 +105,6 @@ class SoftKeyboardWatcher(
                 FrameLayout.LayoutParams.MATCH_PARENT
             )
         }
-
-        val popupRect = Rect()
-
-        var keyboardHeight = 0
-
-        val wm = activity.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-        val screenRealHeight: Int =
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                val bounds = wm.currentWindowMetrics.bounds
-                bounds.height()
-            } else {
-                Point().also {
-                    @Suppress("DEPRECATION")
-                    wm.defaultDisplay.getRealSize(it)
-                }.y
-            }
 
         val globalLayoutListener = ViewTreeObserver.OnGlobalLayoutListener {
             popupView.getWindowVisibleDisplayFrame(popupRect)
@@ -121,9 +123,10 @@ class SoftKeyboardWatcher(
             // When full screen statusBarTop = 0, No need to consider full screen
             val imeHeight = if (imeVisible) heightDiff - statusBarTop else 0
 
+            // Log.d("SoftKeyboardWatcher", "watchViaPopupWindow: imeHeight = $imeHeight")
             if (keyboardHeight != imeHeight) {
                 keyboardHeight = imeHeight
-                listener.invoke(imeVisible, imeHeight, navigationBarBottom, false)
+                callback?.onChanged(imeHeight, navigationBarBottom, false)
             }
         }
 
@@ -145,6 +148,7 @@ class SoftKeyboardWatcher(
             setBackgroundDrawable(ColorDrawable(0))
         }
 
+        // todo 支持手动 dismiss
         lifecycleOwner.lifecycle.addObserver(object : LifecycleEventObserver {
             override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
                 if (event == Lifecycle.Event.ON_CREATE) {
